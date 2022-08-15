@@ -2,9 +2,15 @@ package tic_tac_toe
 
 import (
 	"image/color"
+	"log"
 	"math"
 
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
+
+	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 const (
@@ -12,38 +18,59 @@ const (
 	gridLiniaSize = 1
 	boardWidth    = 300
 	boardHeight   = 300
-	XSymbol       = 1
-	OSymbol       = 2
-	XSymbolSize   = 80
-	OSymbolRadius = 40
+	XSize         = 80
+	ORadius       = 40
 )
 
 var (
 	XColor          = color.RGBA{64, 140, 242, 0xff}
 	OColor          = color.RGBA{242, 140, 64, 0xff}
+	gameOverColor   = color.RGBA{165, 60, 30, 0xff}
 	boardFrameColor = color.Black
+	mplusBigFont    font.Face
 )
+
+func init() {
+	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	const dpi = 72
+	mplusBigFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    32,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 // Board represents a board state.
 type Board struct {
-	grid          [gridSize]int
-	currentPlayer int
+	gameState *GameState
+	winner    int
 }
 
 // Update updates the board state.
 func (b *Board) Update() error {
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) || ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
-		index := posToIndex(x, y)
-		if index >= 0 && b.grid[index] == 0 {
-			b.grid[index] = b.currentPlayer
-			if b.currentPlayer == XSymbol {
-				b.currentPlayer = OSymbol
+		move := posToIndex(x, y)
+
+		if b.winner == 0 && b.gameState.Play(move) {
+			if b.gameState.HasWinner() {
+				b.winner = b.gameState.currentPlayer
+			} else if b.gameState.IsDraw() {
+				b.winner = Draw
 			} else {
-				b.currentPlayer = XSymbol
+				b.gameState.NextTurn()
 			}
 		}
+
 	}
+
 	return nil
 }
 
@@ -55,26 +82,49 @@ func (b *Board) Layout(outsideWidth, outsideHeight int) (boardWidth, boardHeight
 // NewBoard generates a new Board.
 func NewBoard() (*Board, error) {
 	b := &Board{
-		grid:          [gridSize]int{},
-		currentPlayer: XSymbol,
+		gameState: &GameState{currentPlayer: O, board: [gridSize]int{0, 0, 0, 0, 0, 0, 0, 0, 0}},
+		winner:    0,
 	}
 	return b, nil
 }
 
 // Draw draws the board to the given boardImage.
 func (b *Board) Draw(boardImage *ebiten.Image) {
+
 	boardImage.Clear()
 	for i := 0; i < gridSize; i++ {
-		if b.grid[i] == XSymbol {
+		if b.gameState.board[i] == X {
 			posX, posY := indexToPos(i)
-			b.drawX(boardImage, posX, posY, XSymbolSize, XColor, 4)
-		} else if b.grid[i] == OSymbol {
+			b.drawX(boardImage, posX, posY, XSize, XColor, 4)
+		} else if b.gameState.board[i] == O {
 			posX, posY := indexToPos(i)
-			b.drawO(boardImage, posX, posY, OSymbolRadius, OColor, 5)
+			b.drawO(boardImage, posX, posY, ORadius, OColor, 5)
 		}
 	}
-
 	b.drawBoard(boardImage, boardFrameColor)
+
+	if b.winner == X {
+		b.winnerXText(boardImage)
+	} else if b.winner == O {
+		b.winnerOText(boardImage)
+	} else if b.winner == Draw {
+		b.drawText(boardImage)
+	}
+}
+
+func (b *Board) drawText(boardImage *ebiten.Image) {
+	const x, y = 100, 160
+	text.Draw(boardImage, "Draw!!!", mplusBigFont, x, y, gameOverColor)
+}
+
+func (b *Board) winnerXText(boardImage *ebiten.Image) {
+	const x, y = 40, 160
+	text.Draw(boardImage, "Player X wins!!!", mplusBigFont, x, y, gameOverColor)
+}
+
+func (b *Board) winnerOText(boardImage *ebiten.Image) {
+	const x, y = 40, 160
+	text.Draw(boardImage, "Player O wins!!!", mplusBigFont, x, y, gameOverColor)
 }
 
 func indexToPos(index int) (int, int) {
