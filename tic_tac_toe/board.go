@@ -38,7 +38,7 @@ func init() {
 
 	const dpi = 72
 	mplusBigFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    32,
+		Size:    36,
 		DPI:     dpi,
 		Hinting: font.HintingFull,
 	})
@@ -113,17 +113,17 @@ func (b *Board) Draw(boardImage *ebiten.Image) {
 }
 
 func (b *Board) drawText(boardImage *ebiten.Image) {
-	const x, y = 100, 160
+	const x, y = 80, 160
 	text.Draw(boardImage, "Draw!!!", mplusBigFont, x, y, gameOverColor)
 }
 
 func (b *Board) winnerXText(boardImage *ebiten.Image) {
-	const x, y = 40, 160
+	const x, y = 20, 160
 	text.Draw(boardImage, "Player X wins!!!", mplusBigFont, x, y, gameOverColor)
 }
 
 func (b *Board) winnerOText(boardImage *ebiten.Image) {
-	const x, y = 40, 160
+	const x, y = 20, 160
 	text.Draw(boardImage, "Player O wins!!!", mplusBigFont, x, y, gameOverColor)
 }
 
