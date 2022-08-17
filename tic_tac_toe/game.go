@@ -20,10 +20,10 @@ type Game struct {
 }
 
 // NewGame generates a new Game object.
-func NewGame() (*Game, error) {
+func NewGame(player, difficulty int) (*Game, error) {
 	g := &Game{}
 	var err error
-	g.board, err = NewBoard()
+	g.board, err = NewBoard(player, difficulty)
 	if err != nil {
 		return nil, err
 	}

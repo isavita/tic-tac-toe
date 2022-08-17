@@ -8,7 +8,10 @@ import (
 )
 
 func main() {
-	game, err := tic_tac_toe.NewGame()
+	player := tic_tac_toe.XPlayer            // choose_player_symbol();
+	difficulty := tic_tac_toe.DifficultyHard // choose_difficulty();
+
+	game, err := tic_tac_toe.NewGame(player, difficulty)
 	if err != nil {
 		log.Fatal(err)
 	}

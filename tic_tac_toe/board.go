@@ -55,20 +55,21 @@ type Board struct {
 
 // Update updates the board state.
 func (b *Board) Update() error {
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		x, y := ebiten.CursorPosition()
-		move := posToIndex(x, y)
-
-		if b.winner == 0 && b.gameState.Play(move) {
-			if b.gameState.HasWinner() {
-				b.winner = b.gameState.currentPlayer
-			} else if b.gameState.IsDraw() {
-				b.winner = Draw
-			} else {
+	if b.gameState.HasWinner() {
+		b.winner = GetOponent(b.gameState.currentPlayer)
+	} else if b.gameState.IsDraw() {
+		b.winner = Draw
+	} else if b.gameState.currentPlayer == b.gameState.player {
+		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+			x, y := ebiten.CursorPosition()
+			move := posToIndex(x, y)
+			if b.gameState.Play(move) {
 				b.gameState.NextTurn()
 			}
 		}
-
+	} else {
+		b.gameState.Play(b.gameState.MakeMove())
+		b.gameState.NextTurn()
 	}
 
 	return nil
@@ -80,10 +81,15 @@ func (b *Board) Layout(outsideWidth, outsideHeight int) (boardWidth, boardHeight
 }
 
 // NewBoard generates a new Board.
-func NewBoard() (*Board, error) {
+func NewBoard(player, difficulty int) (*Board, error) {
 	b := &Board{
-		gameState: &GameState{currentPlayer: O, board: [gridSize]int{0, 0, 0, 0, 0, 0, 0, 0, 0}},
-		winner:    0,
+		gameState: &GameState{
+			currentPlayer: XPlayer,
+			board:         [gridSize]int{0, 0, 0, 0, 0, 0, 0, 0, 0},
+			player:        player,
+			difficulty:    difficulty,
+		},
+		winner: 0,
 	}
 	return b, nil
 }
@@ -93,19 +99,19 @@ func (b *Board) Draw(boardImage *ebiten.Image) {
 
 	boardImage.Clear()
 	for i := 0; i < gridSize; i++ {
-		if b.gameState.board[i] == X {
+		if b.gameState.board[i] == XPlayer {
 			posX, posY := indexToPos(i)
 			b.drawX(boardImage, posX, posY, XSize, XColor, 4)
-		} else if b.gameState.board[i] == O {
+		} else if b.gameState.board[i] == OPlayer {
 			posX, posY := indexToPos(i)
 			b.drawO(boardImage, posX, posY, ORadius, OColor, 5)
 		}
 	}
 	b.drawBoard(boardImage, boardFrameColor)
 
-	if b.winner == X {
+	if b.winner == XPlayer {
 		b.winnerXText(boardImage)
-	} else if b.winner == O {
+	} else if b.winner == OPlayer {
 		b.winnerOText(boardImage)
 	} else if b.winner == Draw {
 		b.drawText(boardImage)
